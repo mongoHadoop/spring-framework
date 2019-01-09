@@ -48,6 +48,17 @@ import org.springframework.lang.Nullable;
  * @see ClassPathResource
  * @see ByteArrayResource
  * @see InputStreamResource
+ *  抽象了Spring内部使用的到底层资源：
+ *  File url,classpath等
+ *  对应不同的来源都有相应的Resouce实现
+ *  FileSystemResource,ByteArrayResource,AbstractResource,ClassPathResource
+ *  UrlResource
+ *
+ *  ClassPathResource：通过 ClassPathResource 以类路径的方式进行访问；
+ * FileSystemResource：通过 FileSystemResource 以文件系统绝对路径的方式进行访问；
+ * ServletContextResource：通过 ServletContextResource 以相对于Web应用根目录的方式进行访问。
+ * UrlResource ：通过java.net.URL来访问资源，当然它也支持File格式，如“file:”
+ *
  */
 public interface Resource extends InputStreamSource {
 
