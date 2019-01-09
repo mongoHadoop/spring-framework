@@ -45,6 +45,7 @@ import org.springframework.util.Assert;
  * @author Chris Beams
  * @since 11.12.2003
  * @see BeanDefinitionReaderUtils
+ * 通过继承 AbstractBeanDefinitionReader 使用ResourceLoader 将资源文件路径转换为对应的Resouce文件.
  */
 public abstract class AbstractBeanDefinitionReader implements BeanDefinitionReader, EnvironmentCapable {
 
