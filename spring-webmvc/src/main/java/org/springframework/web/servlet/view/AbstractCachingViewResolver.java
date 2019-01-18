@@ -40,6 +40,12 @@ import org.springframework.web.servlet.ViewResolver;
  * @author Rod Johnson
  * @author Juergen Hoeller
  * @see #loadView
+ *
+ * 、AbstractCachingViewResolver：这是一个抽象类，这种视图解析器会把它曾经解析过的视图保存起来，
+ * 然后每次要解析视图的时候先从缓存里面找，如果找到了对应的视图就直接返回，
+ * 如果没有就创建一个新的视图对象，然后把它放到一个用于缓存的map中，
+ * 接着再把新建的视图返回。使用这种视图缓存的方式可以把解析视图的性能问题降到最低
+ * --------------------
  */
 public abstract class AbstractCachingViewResolver extends WebApplicationObjectSupport implements ViewResolver {
 

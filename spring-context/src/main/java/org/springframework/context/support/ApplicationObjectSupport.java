@@ -45,6 +45,21 @@ import org.springframework.util.Assert;
  * @author Rod Johnson
  * @author Juergen Hoeller
  * @see org.springframework.web.context.support.WebApplicationObjectSupport
+ *
+ * 　我们根据工作机制中三部分来分析springmvc的源代码.
+ *
+ * 　　　　其一,ApplicationContext初始化时建立所有url和controller类的对应关系(用Map保存);
+ *
+ * 　　　　其二,根据请求url找到对应的controller,并从controller中找到处理请求的方法;
+ *
+ * 　　　　其三,request参数绑定到方法的形参,执行方法处理请求,并返回结果视图.
+ *
+ *
+ * 我们首先看第一个步骤,也就是建立Map<url,controller>关系的部分.
+ * 第一部分的入口类为ApplicationObjectSupport的setApplicationContext方法.
+ * setApplicationContext方法中核心部分就是初始化容器initApplicationContext(context),
+ * 子类AbstractDetectingUrlHandlerMapping实现了该方法,所以我们直接看子类中的初始化容器方法.
+ *
  */
 public abstract class ApplicationObjectSupport implements ApplicationContextAware {
 
@@ -59,6 +74,14 @@ public abstract class ApplicationObjectSupport implements ApplicationContextAwar
 	@Nullable
 	private MessageSourceAccessor messageSourceAccessor;
 
+	/**
+	 * 我们首先看第一个步骤,也就是建立Map<url,controller>关系的部分.
+	 *  * 第一部分的入口类为ApplicationObjectSupport的setApplicationContext方法.
+	 *  * setApplicationContext方法中核心部分就是初始化容器initApplicationContext(context),
+	 *  * 子类AbstractDetectingUrlHandlerMapping实现了该方法,所以我们直接看子类中的初始化容器方法.
+	 * @param context
+	 * @throws BeansException
+	 */
 
 	@Override
 	public final void setApplicationContext(@Nullable ApplicationContext context) throws BeansException {
@@ -75,6 +98,8 @@ public abstract class ApplicationObjectSupport implements ApplicationContextAwar
 			}
 			this.applicationContext = context;
 			this.messageSourceAccessor = new MessageSourceAccessor(context);
+			//setApplicationContext方法中核心部分就是初始化容器initApplicationContext(context),
+			//子类AbstractDetectingUrlHandlerMapping实现了该方法,所以我们直接看子类中的初始化容器方法.
 			initApplicationContext(context);
 		}
 		else {

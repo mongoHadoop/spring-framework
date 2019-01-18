@@ -34,6 +34,12 @@ import org.springframework.lang.Nullable;
  * @see org.springframework.web.servlet.view.InternalResourceViewResolver
  * @see org.springframework.web.servlet.view.ResourceBundleViewResolver
  * @see org.springframework.web.servlet.view.XmlViewResolver
+ *
+ * SpringMVC	用于处理视图最重要的两个接口是ViewResolver和View.
+ * ViewResolver	的主要作用是把一个逻辑上的视图名称解析为一个真正的视图,
+ * SpringMVC	中用于把View对象呈现给客户端的是View对象本身，而ViewResolver只是把逻辑视图名称解析为对象的View对象.
+ * View			接口的主要作用是用于处理视图，然后返回给客户端。
+ *
  */
 public interface ViewResolver {
 

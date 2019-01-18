@@ -43,11 +43,12 @@ import org.springframework.web.servlet.ViewResolver;
 public class ViewResolverComposite implements ViewResolver, Ordered, InitializingBean,
 		ApplicationContextAware, ServletContextAware {
 
+	//用来存储所有的视图解析器
 	private final List<ViewResolver> viewResolvers = new ArrayList<>();
-
+	//设置视图解析器的执行顺序
 	private int order = Ordered.LOWEST_PRECEDENCE;
 
-
+		//设置视图解析器
 	/**
 	 * Set the list of view viewResolvers to delegate to.
 	 */
@@ -60,6 +61,7 @@ public class ViewResolverComposite implements ViewResolver, Ordered, Initializin
 
 	/**
 	 * Return the list of view viewResolvers to delegate to.
+	 * //获取所有的视图解析器
 	 */
 	public List<ViewResolver> getViewResolvers() {
 		return Collections.unmodifiableList(this.viewResolvers);
@@ -93,6 +95,7 @@ public class ViewResolverComposite implements ViewResolver, Ordered, Initializin
 	}
 
 	@Override
+	////初始化视图解析器
 	public void afterPropertiesSet() throws Exception {
 		for (ViewResolver viewResolver : this.viewResolvers) {
 			if (viewResolver instanceof InitializingBean) {
@@ -103,6 +106,7 @@ public class ViewResolverComposite implements ViewResolver, Ordered, Initializin
 
 	@Override
 	@Nullable
+	////生成View对象
 	public View resolveViewName(String viewName, Locale locale) throws Exception {
 		for (ViewResolver viewResolver : this.viewResolvers) {
 			View view = viewResolver.resolveViewName(viewName, locale);

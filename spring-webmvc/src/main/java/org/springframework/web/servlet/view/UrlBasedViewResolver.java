@@ -82,6 +82,26 @@ import org.springframework.web.servlet.View;
  * @see AbstractUrlBasedView
  * @see InternalResourceView
  * @see org.springframework.web.servlet.view.freemarker.FreeMarkerView
+ *
+ * UrlBasedViewResolver：它是对ViewResolver的一种简单实现，而且继承了AbstractCachingViewResolver，
+ * 主要就是提供的一种拼接URL的方式来解析视图，它可以让我们通过prefix属性指定一个指定的前缀，
+ * 通过suffix属性指定一个指定的后缀，然后把返回的逻辑视图名称加上指定的前缀和后缀就是指定的视图URL了。
+ * 如prefix=/WEB-INF/jsps/，suffix=.jsp，返回的视图名称viewName=test/indx，
+ * 则UrlBasedViewResolver解析出来的视图URL就是/WEB-INF/jsps/test/index.jsp。
+ * 默认的prefix和suffix都是空串。URLBasedViewResolver支持返回的视图名称中包含redirect:前缀
+ * 这样就可以支持URL在客户端的跳转，如当返回的视图名称是”redirect:test.do”的时候，
+ * URLBasedViewResolver发现返回的视图名称包含”redirect:”前缀，
+ * 于是把返回的视图名称前缀”redirect:”去掉，取后面的test.do组成一个RedirectView，
+ * RedirectView中将把请求返回的模型属性组合成查询参数的形式组合到redirect的URL后面，
+ * 然后调用HttpServletResponse对象的sendRedirect方法进行重定向。
+ * 同样URLBasedViewResolver还支持forword:前缀，对于视图名称中包含forword:前缀的视图名称将会被封装成一个InternalResourceView对象，
+ * 然后在服务器端利用RequestDispatcher的forword方式跳转到指定的地址。
+ * 使用UrlBasedViewResolver的时候必须指定属性viewClass，表示解析成哪种视图，一般使用较多的就是InternalResourceView，
+ * 利用它来展现jsp，但是当我们使用JSTL的时候我们必须使用JstlView。下面是一段UrlBasedViewResolver的定义，根据该定义，
+ * 当返回的逻辑视图名称是test的时候，UrlBasedViewResolver将把逻辑视图名称加上定义好的前缀和后缀，即“/WEB-INF/test.jsp”，
+ * 然后新建一个viewClass属性指定的视图类型予以返回，即返回一个url为“/WEB-INF/test.jsp”的InternalResourceView对象。
+ *
+ *
  */
 public class UrlBasedViewResolver extends AbstractCachingViewResolver implements Ordered {
 

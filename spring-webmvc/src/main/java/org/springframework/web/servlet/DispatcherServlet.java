@@ -994,7 +994,10 @@ public class DispatcherServlet extends FrameworkServlet {
 	 * @param request current HTTP request
 	 * @param response current HTTP response
 	 * @throws Exception in case of any kind of processing failure
+	 *下面我们开始分析第二个步骤,第二个步骤是由请求触发的,
+	 * 所以入口为DispatcherServlet.DispatcherServlet的核心方法为doService(),doService()中的核心逻辑由doDispatch()实现,我们查看doDispatch()的源代码.
 	 */
+	/** 中央控制器,控制请求的转发 **/
 	protected void doDispatch(HttpServletRequest request, HttpServletResponse response) throws Exception {
 		HttpServletRequest processedRequest = request;
 		HandlerExecutionChain mappedHandler = null;
@@ -1007,20 +1010,25 @@ public class DispatcherServlet extends FrameworkServlet {
 			Exception dispatchException = null;
 
 			try {
+				// 1.检查是否是文件上传的请求
 				processedRequest = checkMultipart(request);
 				multipartRequestParsed = (processedRequest != request);
-
+				// 2.取得处理当前请求的controller,这里也称为hanlder,处理器,第一个步骤的意义就在这里体现了.
+				// 这里并不是直接返回controller,而是返回的HandlerExecutionChain请求处理器链对象,该对象封装了handler和interceptors.
 				// Determine handler for the current request.
+				// 如果handler为空,则返回404
+				//第2步:getHandler(processedRequest)方法实际上就是从HandlerMapping中找到url和controller的对应关系.这也就是第一个步骤:建立Map<url,Controller>的意义
 				mappedHandler = getHandler(processedRequest);
 				if (mappedHandler == null) {
 					noHandlerFound(processedRequest, response);
 					return;
 				}
-
+				//3. 获取处理request的处理器适配器handler adapter
 				// Determine handler adapter for the current request.
 				HandlerAdapter ha = getHandlerAdapter(mappedHandler.getHandler());
 
 				// Process last-modified header, if supported by the handler.
+				// 处理 last-modified 请求头
 				String method = request.getMethod();
 				boolean isGet = "GET".equals(method);
 				if (isGet || "HEAD".equals(method)) {
@@ -1029,19 +1037,30 @@ public class DispatcherServlet extends FrameworkServlet {
 						return;
 					}
 				}
-
+				// 4.拦截器的预处理方法
 				if (!mappedHandler.applyPreHandle(processedRequest, response)) {
 					return;
 				}
-
+				/***
+				 *
+				 * 上面的方法中,第2步其实就是从第一个步骤中的Map<urls,beanName>中取得controller,然后经过拦截器的预处理方法,
+				 * 到最核心的部分--第5步调用controller的方法处理请求.在第2步中我们可以知道处理request的controller,
+				 * 第5步就是要根据url确定controller中处理请求的方法,然后通过反射获取该方法上的注解和参数,
+				 * 解析方法和参数上的注解,最后反射调用方法获取ModelAndView结果视图。因为上面采用注解url形式说明的,
+				 * 所以我们这里继续以注解处理器适配器来说明.第5步调用的就是AnnotationMethodHandlerAdapter的handle().handle()中的
+				 * 核心逻辑由invokeHandlerMethod(request, response, handler)实现.
+				 *
+				 */
+				// 5.实际的处理器处理请求,返回结果视图对象
 				// Actually invoke the handler.
 				mv = ha.handle(processedRequest, response, mappedHandler.getHandler());
 
 				if (asyncManager.isConcurrentHandlingStarted()) {
 					return;
 				}
-
+				// 结果视图对象的处理
 				applyDefaultViewName(processedRequest, mv);
+				// 6.拦截器的后处理方法
 				mappedHandler.applyPostHandle(processedRequest, response, mv);
 			}
 			catch (Exception ex) {
@@ -1052,6 +1071,7 @@ public class DispatcherServlet extends FrameworkServlet {
 				// making them available for @ExceptionHandler methods and other scenarios.
 				dispatchException = new NestedServletException("Handler dispatch failed", err);
 			}
+			// // 请求成功响应之后的方法
 			processDispatchResult(processedRequest, response, mappedHandler, mv, dispatchException);
 		}
 		catch (Exception ex) {
@@ -1079,6 +1099,7 @@ public class DispatcherServlet extends FrameworkServlet {
 
 	/**
 	 * Do we need view name translation?
+	 *  // 结果视图对象的处理
 	 */
 	private void applyDefaultViewName(HttpServletRequest request, @Nullable ModelAndView mv) throws Exception {
 		if (mv != null && !mv.hasView()) {
@@ -1113,6 +1134,7 @@ public class DispatcherServlet extends FrameworkServlet {
 
 		// Did the handler return a view to render?
 		if (mv != null && !mv.wasCleared()) {
+			//渲染试图
 			render(mv, request, response);
 			if (errorView) {
 				WebUtils.clearErrorRequestAttributes(request);
@@ -1344,6 +1366,11 @@ public class DispatcherServlet extends FrameworkServlet {
 		String viewName = mv.getViewName();
 		if (viewName != null) {
 			// We need to resolve the view name.
+			/**
+			 *  * resolveViewName的主要工作就是从配置的所有视图解析器中查找一个可以生成View对象的视图解析器
+			 * 	 * 如：InternalResourceViewResolver,FreeMarkerViewResolver
+			 * 	 * 在InternalResourceViewResolver中的操作就是将viewName和locale设置到View对象中，这样就完成了View对象的创建。
+			 */
 			view = resolveViewName(viewName, mv.getModelInternal(), locale, request);
 			if (view == null) {
 				throw new ServletException("Could not resolve view with name '" + mv.getViewName() +
@@ -1401,6 +1428,10 @@ public class DispatcherServlet extends FrameworkServlet {
 	 * @throws Exception if the view cannot be resolved
 	 * (typically in case of problems creating an actual View object)
 	 * @see ViewResolver#resolveViewName
+	 *
+	 * resolveViewName的主要工作就是从配置的所有视图解析器中查找一个可以生成View对象的视图解析器
+	 * 如：InternalResourceViewResolver,FreeMarkerViewResolver
+	 * 在InternalResourceViewResolver中的操作就是将viewName和locale设置到View对象中，这样就完成了View对象的创建。
 	 */
 	@Nullable
 	protected View resolveViewName(String viewName, @Nullable Map<String, Object> model,

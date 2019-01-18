@@ -66,17 +66,31 @@ public abstract class AbstractDetectingUrlHandlerMapping extends AbstractUrlHand
 	 * which no such URLs could be determined is simply not considered a handler.
 	 * @throws org.springframework.beans.BeansException if the handler couldn't be registered
 	 * @see #determineUrlsForHandler(String)
+	 *
+	 *
+	 * ,子类AbstractDetectingUrlHandlerMapping实现了该方法,所以我们直接看子类中的初始化容器方法.
+	 *
+	 *
+	 *
 	 */
+	/**
+	 　　  * 建立当前ApplicationContext中的所有controller和url的对应关系
+	 　　　 */
 	protected void detectHandlers() throws BeansException {
 		ApplicationContext applicationContext = obtainApplicationContext();
+		// 获取ApplicationContext容器中所有bean的Name
 		String[] beanNames = (this.detectHandlersInAncestorContexts ?
 				BeanFactoryUtils.beanNamesForTypeIncludingAncestors(applicationContext, Object.class) :
 				applicationContext.getBeanNamesForType(Object.class));
 
 		// Take any bean name that we can determine URLs for.
+		// 遍历beanNames,并找到这些bean对应的url
 		for (String beanName : beanNames) {
+			//　 // 找bean上的所有url(controller上的url+方法上的url),该方法由对应的子类实现
+			//   /** 获取controller中所有方法的url,由子类实现,典型的模板模式 **/
 			String[] urls = determineUrlsForHandler(beanName);
 			if (!ObjectUtils.isEmpty(urls)) {
+				// 保存urls和beanName的对应关系,put it to Map<urls,beanName>,该方法在父类AbstractUrlHandlerMapping中实现
 				// URL paths found: Let's consider it a handler.
 				registerHandler(urls, beanName);
 			}
@@ -93,6 +107,18 @@ public abstract class AbstractDetectingUrlHandlerMapping extends AbstractUrlHand
 	 * @param beanName the name of the candidate bean
 	 * @return the URLs determined for the bean, or an empty array if none
 	 */
+
+	/** 获取controller中所有方法的url,由子类实现,典型的模板模式
+	 *
+	 *
+	 * determineUrlsForHandler(String beanName)方法的作用是获取每个controller中的url,
+	 * 不同的子类有不同的实现,这是一个典型的模板设计模式.
+	 * 因为开发中我们用的最多的就是用注解来配置controller中的url,
+	 * DefaultAnnotationHandlerMapping是AbstractDetectingUrlHandlerMapping的子类,
+	 * 处理注解形式的url映射.所以我们这里以DefaultAnnotationHandlerMapping来进行分析.
+	 * 我们看DefaultAnnotationHandlerMapping是如何查beanName上所有映射的url.
+	 *
+	 * **/
 	protected abstract String[] determineUrlsForHandler(String beanName);
 
 }
