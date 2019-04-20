@@ -1025,6 +1025,24 @@ public class DispatcherServlet extends FrameworkServlet {
 				}
 				//3. 获取处理request的处理器适配器handler adapter
 				// Determine handler adapter for the current request.
+				// Determine handler adapter for the current request.
+				// 3. 获取handler适配器 Adapter,获取handler适配器 Adapter
+				/**
+				 * 其实能看见他是从一个handlerAdapters属性里面遍历了我们的适配器
+				 * 这个handlerAdapters哪来的呢？ 跟我们的HandlerMappings一样
+				 * 在他的配置文件里面有写，就是我们刚刚所说的 待会儿见的那个东西~ 不多说 上图：
+				 *
+				 *
+				 至于什么是适配器，我们结合Handler来讲， 就如我们在最开始的总结时所说的，
+				 一开始只是找到了Handler 现在要执行了，
+				 但是有个问题，Handler不止一个， 自然而然对应的执行方式就不同了，
+				 这时候适配器的概念就出来了：对应不同的Handler的执行方案。
+
+				 其实我们的SpringMVC关键的概念就在于Handler（处理器） 和Adapter(适配器)
+				 通过一个关键的HandlerMappings 找到合适处理你的Controller的Handler
+				 然后再通过HandlerAdapters找到一个合适的HandlerAdapter 来执行Handler即Controller里面的逻辑。 最后再返回ModlAndView...
+				 */
+
 				HandlerAdapter ha = getHandlerAdapter(mappedHandler.getHandler());
 
 				// Process last-modified header, if supported by the handler.
