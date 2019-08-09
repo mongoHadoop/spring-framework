@@ -139,6 +139,7 @@ public class FileSystemXmlApplicationContext extends AbstractXmlApplicationConte
 		super(parent);
 		setConfigLocations(configLocations);
 		if (refresh) {
+			//refresh()方法就是这个ioc容器加载的入口，该方法的具体实现在AbstractApplicationContext。
 			refresh();
 		}
 	}

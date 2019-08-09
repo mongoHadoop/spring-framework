@@ -122,7 +122,7 @@ public class InternalResourceView extends AbstractUrlBasedView {
 
 	/**
 	 * An ApplicationContext is not strictly required for InternalResourceView.
-	 */
+	 */FileSystemXmlApplicationContext
 	@Override
 	protected boolean isContextRequired() {
 		return false;
