@@ -91,6 +91,10 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 	 * (or DTD, historically).
 	 * <p>Opens a DOM Document; then initializes the default settings
 	 * specified at the {@code <beans/>} level; then parses the contained bean definitions.
+	 *
+	 * 这里主要是获得一个Element对象。这个对象就代表xml文件中的<beans/>节点。
+	 * 在这个节点下包含着文件中的所有<bean/>节点。
+	 * 然后将这个Element对像交给的doRegistrerBeanDefinitions(Element）方法来处理。
 	 */
 	@Override
 	public void registerBeanDefinitions(Document doc, XmlReaderContext readerContext) {
@@ -118,6 +122,10 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 
 	/**
 	 * Register each bean definition within the given root {@code <beans/>} element.
+	 * doRegisterBeanDefinitions方法将</beans>节点下的每一个<bean/>
+	 * 相对应的bean definition注册。但是真正做这件事的是另一个方法
+	 * parseBeanDefinitions(root, this.delegate);
+	 *
 	 */
 	@SuppressWarnings("deprecation")  // for Environment.acceptsProfiles(String...)
 	protected void doRegisterBeanDefinitions(Element root) {
@@ -150,6 +158,9 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 		//解析钱处理,留给子类实现
 		preProcessXml(root);
 		//解析并注册BeanDefinition
+		/**
+		 * 将</beans>节点下的每一个<bean/>相对应的bean definition注册
+		 */
 		parseBeanDefinitions(root, this.delegate);
 		//解析后处理,留给子类实现
 		postProcessXml(root);
@@ -170,6 +181,10 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 	 * Parse the elements at the root level in the document:
 	 * "import", "alias", "bean".
 	 * @param root the DOM root element of the document
+	 *  用一个for循环遍历<beans/>节点下的所有子节点，
+	 *  也就是所有的<bean/>，然后对<bean/>节点进行解析。注意，刚才是对<beans/>进行解析。
+	 *  不过这个解析的任务交给parseDefaultElement(Element ele,BeanDefinitionParserDelegate delegate)方法来完成。
+	 *
 	 */
 	protected void parseBeanDefinitions(Element root, BeanDefinitionParserDelegate delegate) {
 
@@ -196,7 +211,7 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 	/**
 	 * 解析标签
 	 * @param ele
-	 * @param delegate
+	 * @param delegate１２３
 	 */
 
 	private void parseDefaultElement(Element ele, BeanDefinitionParserDelegate delegate) {
@@ -314,6 +329,9 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 	/**
 	 * Process the given bean element, parsing the bean definition
 	 * and registering it with the registry.
+	 * processBeanDefinition方法中将Element对象转化成了BeanDefinitionHolder对象。
+	 * 这个BeanDefinitionHolder对象中持有的BeanDefinition实例的引用，还有beanName,还有bean的别名。（BeanDefinitionHolder的创建）
+	 *
 	 */
 	protected void processBeanDefinition(Element ele, BeanDefinitionParserDelegate delegate) {
 		BeanDefinitionHolder bdHolder = delegate.parseBeanDefinitionElement(ele);
@@ -321,6 +339,9 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 			bdHolder = delegate.decorateBeanDefinitionIfRequired(ele, bdHolder);
 			try {
 				// Register the final decorated instance.
+				/**
+				 * 然后将BeanDefinitionHolder对象和特定的bean工厂作为参数交给BeanDefinitionReaderUtils类来处理来进行注册。
+				 */
 				BeanDefinitionReaderUtils.registerBeanDefinition(bdHolder, getReaderContext().getRegistry());
 			}
 			catch (BeanDefinitionStoreException ex) {

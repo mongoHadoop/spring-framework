@@ -73,7 +73,15 @@ import org.springframework.util.xml.XmlValidationModeDetector;
  * @see DefaultBeanDefinitionDocumentReader
  * @see BeanDefinitionRegistry
  * @see org.springframework.beans.factory.support.DefaultListableBeanFactory
- * @see org.springframework.context.support.GenericApplicationContext
+ * @see org.springframework.context.support.GenericApplicationContextloadBeanDefinitions
+ *
+ *
+ * BeanDefinition的加载、解析、处理、注册主要涉及到了四个类。
+ * ①、XMLBeanDefinitionReader：主要是的任务是把XML文件加载到内存中以Document对象的形式存在。
+ * ②、DefaultBeanDefinitionDocumentReader：完成解析和处理的任务。最后将处理得到的BeanDefinitionHolder交给了BeanDefinitionReaderUtils进行注册。
+ * ③、BeanDefinitionReaderUtils：BeanDefinitionHolder有了，Bean工厂也有了，它就负责把BeanDefinitionHolder中的BeanDefinition和BeanName等取出来，然后注册到Bean工厂中。
+ *
+ * ④、DefaultListableBeanFactory（bean工厂）：它有一个ConcurrentHashMap成员变量，以beanName为键，BeanDefinition为值保存注册的bean。
  */
 public class XmlBeanDefinitionReader extends AbstractBeanDefinitionReader {
 
@@ -106,6 +114,9 @@ public class XmlBeanDefinitionReader extends AbstractBeanDefinitionReader {
 	private boolean namespaceAware = false;
 
 	//定义读取Document并注册BeanDefination
+	/**
+	 * DefaultBeanDefinitionDocumentReader是BeanDefinitionDocumentReader的一个实现类。这一步主要是解析文档解析的是<beans/>。比如xml文件是XSD的还是DTD的。
+	 */
 	private Class<? extends BeanDefinitionDocumentReader> documentReaderClass =
 			DefaultBeanDefinitionDocumentReader.class;
 
@@ -398,6 +409,10 @@ public class XmlBeanDefinitionReader extends AbstractBeanDefinitionReader {
 			///定义从资源文件加载到转换为Document功能
 			Document doc = doLoadDocument(inputSource, resource);
 			//解析和注册 BeanDefinitions
+			/**
+			 * registerBeanDefinitions方法注册指定的Document对象中的bean definition。
+			 * 这里实际上是创建了一个BeanDefinitionDocumentReader对象然后让它来完成。
+			 */
 			int count = registerBeanDefinitions(doc, resource);
 			if (logger.isDebugEnabled()) {
 				logger.debug("Loaded " + count + " bean definitions from " + resource);
@@ -514,6 +529,8 @@ public class XmlBeanDefinitionReader extends AbstractBeanDefinitionReader {
 	 * @see #loadBeanDefinitions
 	 * @see #setDocumentReaderClass
 	 * @see BeanDefinitionDocumentReader#registerBeanDefinitions
+	 *
+	 * registerBeanDefinitions方法注册指定的Document对象中的bean definition。这里实际上是创建了一个BeanDefinitionDocumentReader对象然后让它来完成。
 	 */
 	public int registerBeanDefinitions(Document doc, Resource resource) throws BeanDefinitionStoreException {
 		//使用DefaultBeanDefinitionDocumentReader

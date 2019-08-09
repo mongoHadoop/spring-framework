@@ -36,6 +36,13 @@ import org.springframework.lang.Nullable;
  * @see ConfigurableListableBeanFactory#getBeanDefinition
  * @see org.springframework.beans.factory.support.RootBeanDefinition
  * @see org.springframework.beans.factory.support.ChildBeanDefinition
+ *
+ * BeanDefinition的加载、解析、处理、注册主要涉及到了四个类。
+ * ①、XMLBeanDefinitionReader：主要是的任务是把XML文件加载到内存中以Document对象的形式存在。
+ * ②、DefaultBeanDefinitionDocumentReader：完成解析和处理的任务。最后将处理得到的BeanDefinitionHolder交给了BeanDefinitionReaderUtils进行注册。
+ * ③、BeanDefinitionReaderUtils：BeanDefinitionHolder有了，Bean工厂也有了，它就负责把BeanDefinitionHolder中的BeanDefinition和BeanName等取出来，然后注册到Bean工厂中。
+ *
+ * ④、DefaultListableBeanFactory（bean工厂）：它有一个ConcurrentHashMap成员变量，以beanName为键，BeanDefinition为值保存注册的bean。
  */
 public interface BeanDefinition extends AttributeAccessor, BeanMetadataElement {
 

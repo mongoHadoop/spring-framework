@@ -156,6 +156,12 @@ public abstract class BeanDefinitionReaderUtils {
 	 * @param definitionHolder the bean definition including name and aliases
 	 * @param registry the bean factory to register with
 	 * @throws BeanDefinitionStoreException if registration failed
+	 *
+	 * BeanDefinitionReaderUtils类中
+	 * registerBeanDefinition方法先根据
+	 * BeanDefinitionHolder获取beanName和BeanDefinition，
+	 * 然后将其注册到Bean工厂中的Map对象中。比如bean工厂是DefaultListableBeanFactory。
+	 *
 	 */
 	public static void registerBeanDefinition(
 			BeanDefinitionHolder definitionHolder, BeanDefinitionRegistry registry)
