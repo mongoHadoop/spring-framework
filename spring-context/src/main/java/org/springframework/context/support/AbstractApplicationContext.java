@@ -518,49 +518,64 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 		synchronized (this.startupShutdownMonitor) {
 			// Prepare this context for refreshing.
 			// 刷新上下文
+
+			// 1： 刷新前的准备工作。
 			prepareRefresh();
 
 			// Tell the subclass to refresh the internal bean factory.
 
-			//加载配置文件的地方
+			// 告诉子类刷新内部bean 工厂。
+			//  2：创建IoC容器（DefaultListableBeanFactory）,加载解析XML文件（最终存储到Document对象中）
+			// 读取Document对象，并完成BeanDefinition的加载和注册工作
 			ConfigurableListableBeanFactory beanFactory = obtainFreshBeanFactory();
 			//这里是在子类中启动refreshBeanFactort()的地方
 			// Prepare the bean factory for use in this context.
+			//  3： 对IoC容器进行一些预处理（设置一些公共属性）
 			prepareBeanFactory(beanFactory);
 
 			try {
 				// 设置beanFactory的后置处理
 				// Allows post-processing of the bean factory in context subclasses.
+				//  4:  允许在上下文子类中对bean工厂进行后处理。
 				postProcessBeanFactory(beanFactory);
 
 				//调用beanFactory的后处理器，这些后处理器是在bean定义中向容器注册的
 				// Invoke factory processors registered as beans in the context.
+				//  5： 调用BeanFactoryPostProcessor后置处理器对BeanDefinition处理
 				invokeBeanFactoryPostProcessors(beanFactory);
 
 				//注册bean的后处理器，在bean创建过程中调用
 				// Register bean processors that intercept bean creation.
+				//  6： 注册BeanPostProcessor后置处理器
 				registerBeanPostProcessors(beanFactory);
 
 				//对上下文中的消息源进行初始化
 				// Initialize message source for this context.
+				//  7： 初始化一些消息源（比如处理国际化的i18n等消息源）
 				initMessageSource();
 
 				//初始化上下文中的事件机制
 				// Initialize event multicaster for this context.
+				//  8： 初始化应用事件多播器
 				initApplicationEventMulticaster();
 
 				//初始化其他的特殊bean
 				// Initialize other special beans in specific context subclasses.
+				//  9： 初始化一些特殊的bean
 				onRefresh();
 				//检查监听bean并且将这些bean向容器注册
 				// Check for listener beans and register them.
+				//  10： 注册一些监听器
 				registerListeners();
 
 				//实例化所有的(non-lazy-init)单利
 				// Instantiate all remaining (non-lazy-init) singletons.
+				//  11： 实例化剩余的单例bean（非懒加载方式）
+				//      注意事项：Bean的IoC、DI和AOP都是发生在此步骤
 				finishBeanFactoryInitialization(beanFactory);
 				//发布容器事件，结束refresh过程
 				// Last step: publish corresponding event.
+				//  12： 完成刷新时，需要发布对应的事件
 				finishRefresh();
 			}
 
@@ -571,18 +586,22 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 				}
 
 				// Destroy already created singletons to avoid dangling resources.
+				// 销毁已经创建的单例避免占用资源
 				destroyBeans();
 
 				// Reset 'active' flag.
+				// 重置'active' 标签。
 				cancelRefresh(ex);
 
 				// Propagate exception to caller.
+				// 传播异常给调用者
 				throw ex;
 			}
 
 			finally {
 				// Reset common introspection caches in Spring's core, since we
 				// might not ever need metadata for singleton beans anymore...
+				// 重置Spring核心中的常见内省缓存，因为我们可能不再需要单例bean的元数据了...
 				resetCommonCaches();
 			}
 		}
@@ -633,7 +652,16 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	 * @see #refreshBeanFactory()
 	 * @see #getBeanFactory()
 	 */
+	// 告诉内部子类刷新内部的bean factory
 	protected ConfigurableListableBeanFactory obtainFreshBeanFactory() {
+		// 主要是通过该方法完成IoC容器的刷新
+		// ClassPathXmlApplicationContext.refreshBeanFactory 调用的是 AbstractRefreshApplicationContext
+		// AnnotationConfigApplicationContext.refreshBeanFactory调用的是GenericApplicationContext
+		/**
+		 * 1.首先第一步， refreshBeanFactory，刷新Bean工厂，
+		 * refreshBeanFactory是一个接口，此接口在 AbstractApplicationContext
+		 * 中进行定义，先看一下这个JavaDoc对这个接口的定义
+		 */
 		refreshBeanFactory();
 		return getBeanFactory();
 	}
@@ -1270,6 +1298,12 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	 * Return the internal bean factory of the parent context if it implements
 	 * ConfigurableApplicationContext; else, return the parent context itself.
 	 * @see org.springframework.context.ConfigurableApplicationContext#getBeanFactory
+	 * 上述方法传递的是一个getInternalParentBeanFactory()方法，我们先来看一下这个方法：
+	 *
+	 * getParent()这个方法会返回父类上下文，如果没有(父类)的话，返回null(也就表明这个上下文是继承树的根节点。)
+	 * 这句代码的意思也就是说如果它实现了 ConfigurableApplicationContext，则返回父类上下文的BeanFactory，
+	 * 如果没有的话，就返回父上下文本身。因为没有设置过父节点上下文，
+	 * 所以此时的getInternalParentBeanFactory()方法返回为null。
 	 */
 	@Nullable
 	protected BeanFactory getInternalParentBeanFactory() {
@@ -1366,6 +1400,12 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	 * @throws BeansException if initialization of the bean factory failed
 	 * @throws IllegalStateException if already initialized and multiple refresh
 	 * attempts are not supported
+	 */
+	/**
+	 * 子类必须实现这个方法才能执行实际的配置加载。此方法在任何其他初始化工作开始之前由refresh()方法调用
+	 * 一个子类创建了一个新的 bean factory 并且持有对它的引用，或者返回它拥有的单个BeanFactory实例。
+	 * 在后一种情况下，如果多次刷新上下文，它通常会抛出 IllegalStateException。
+	 * 它有两个实现类，默认的是 AbstractRefreshableApplicationContext 类，它的refreshBeanFactory方法如下
 	 */
 	protected abstract void refreshBeanFactory() throws BeansException, IllegalStateException;
 

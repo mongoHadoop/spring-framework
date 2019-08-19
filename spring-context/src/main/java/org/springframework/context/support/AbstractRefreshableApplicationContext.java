@@ -119,19 +119,28 @@ public abstract class AbstractRefreshableApplicationContext extends AbstractAppl
 	 * This implementation performs an actual refresh of this context's underlying
 	 * bean factory, shutting down the previous bean factory (if any) and
 	 * initializing a fresh bean factory for the next phase of the context's lifecycle.
+	 *
+	 * 如果之前有IOC容器的话，就进行销毁，并且关闭容器。
+	 * 适用于第二次调用ClassPathXmlApplicationContext("配置文件")，
+	 * 由于是第一次加载配置文件，还未创建BeanFactory，所以hasBeanFactory()返回false。
 	 */
 	@Override
 	protected final void refreshBeanFactory() throws BeansException {
 		//这里判断是否已经建立了beanFactory，如果存在就销毁并关闭
+		// 如果之前有IoC容器，则销毁
 		if (hasBeanFactory()) {
 			destroyBeans();
 			closeBeanFactory();
 		}
 		try {
 			//这里就是在上下文中创建defaultListableBeanFactory的地方。
+			// 创建IoC容器，也就是 DefaultListableBeanFactory, 初始化AbstractBeanFactory
+			// 注册BeanNameAware,BeanClassLoaderAware,BeanFactoryAware, 设置当前BeanFactory
 			DefaultListableBeanFactory beanFactory = createBeanFactory();
 			beanFactory.setSerializationId(getId());
+			// 设置工厂的属性：是否允许BeanDefinition覆盖和是否允许循环依赖
 			customizeBeanFactory(beanFactory);
+			// 调用载入BeanDefinition的方法，在当前类中只定义了抽象的loadBeanDefinitions方法，具体的实现调用子类容器
 			loadBeanDefinitions(beanFactory);
 			synchronized (this.beanFactoryMonitor) {
 				this.beanFactory = beanFactory;
@@ -204,8 +213,12 @@ public abstract class AbstractRefreshableApplicationContext extends AbstractAppl
 	 * @see org.springframework.beans.factory.support.DefaultListableBeanFactory#setAllowEagerClassLoading
 	 * @see org.springframework.beans.factory.support.DefaultListableBeanFactory#setAllowCircularReferences
 	 * @see org.springframework.beans.factory.support.DefaultListableBeanFactory#setAllowRawInjectionDespiteWrapping
+	 * 下面这一步就是创建IOC容器，也就是DefaultListableBeanFactory
 	 */
-	protected DefaultListableBeanFactory createBeanFactory() {
+	/**为上下文创建一个内部工厂，默认的实现创建了一个内部的DefaultListableBeanFactory.getInternalParentBeanFactory()，
+	在子类中被重写，例如自定义DefaultListableBeanFactory的设置。
+	**/
+	 protected DefaultListableBeanFactory createBeanFactory() {
 		return new DefaultListableBeanFactory(getInternalParentBeanFactory());
 	}
 

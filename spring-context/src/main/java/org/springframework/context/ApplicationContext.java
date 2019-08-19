@@ -54,6 +54,20 @@ import org.springframework.lang.Nullable;
  * @see ConfigurableApplicationContext
  * @see org.springframework.beans.factory.BeanFactory
  * @see org.springframework.core.io.ResourceLoader
+ *
+ * Context 在 Spring 的 org.springframework.context 包下
+ * ，给 Spring 提供一个运行时的环境，用以保存各个对象的状态。
+ *
+ * ApplicationContext 是 Context 的顶级父类，它除了能标识一个应用环境的基本信息外，
+ * 还实现了六个接口，这六个接口主要是扩展了 Context 的功能。
+ *
+ * 总体来说 ApplicationContext 必须要完成以下几件事：
+ *
+ * 标识一个应用环境
+ * 利用 BeanFactory 创建 Bean 对象
+ * 保存对象关系表
+ * 能够捕获各种事件
+ *
  */
 public interface ApplicationContext extends EnvironmentCapable, ListableBeanFactory, HierarchicalBeanFactory,
 		MessageSource, ApplicationEventPublisher, ResourcePatternResolver {
