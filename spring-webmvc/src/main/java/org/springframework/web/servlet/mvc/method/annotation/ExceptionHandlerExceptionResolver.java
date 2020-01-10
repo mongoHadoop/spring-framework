@@ -383,11 +383,18 @@ public class ExceptionHandlerExceptionResolver extends AbstractHandlerMethodExce
 	protected ModelAndView doResolveHandlerMethodException(HttpServletRequest request,
 			HttpServletResponse response, @Nullable HandlerMethod handlerMethod, Exception exception) {
 
+		//得到ServletInvocableHandlerMethod 这个HandlerMethod中的method是处理异常的方法.
 		ServletInvocableHandlerMethod exceptionHandlerMethod = getExceptionHandlerMethod(handlerMethod, exception);
 		if (exceptionHandlerMethod == null) {
 			return null;
 		}
-
+		//
+		//
+		/**
+		 * 给ServletInvocableHandlerMethod注入HandlerMethodArgumentResolverComposite和注入HandlerMethodReturnValueHandlerComposite
+		 * 主要为了处理HandlerMethod中方法的参数以及HandlerMethod的返回值
+		 *　
+		 */
 		if (this.argumentResolvers != null) {
 			exceptionHandlerMethod.setHandlerMethodArgumentResolvers(this.argumentResolvers);
 		}
@@ -405,6 +412,10 @@ public class ExceptionHandlerExceptionResolver extends AbstractHandlerMethodExce
 			Throwable cause = exception.getCause();
 			if (cause != null) {
 				// Expose cause as provided argument as well
+				/**
+				 * ServletInvocableHandlerMethod　调用invokeAndHandle方法对参数和返回值进行处理.
+				 * 通过ModelAndViewContainer作为中间变量讲一些视图名，丢入到ModelAndViewContainer
+				 */
 				exceptionHandlerMethod.invokeAndHandle(webRequest, mavContainer, exception, cause, handlerMethod);
 			}
 			else {

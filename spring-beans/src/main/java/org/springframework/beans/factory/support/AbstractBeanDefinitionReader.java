@@ -257,6 +257,7 @@ public abstract class AbstractBeanDefinitionReader implements BeanDefinitionRead
 		for (String location : locations) {
 			count += loadBeanDefinitions(location);
 		}
+		// 最后返回 counter，表示总共加载了多少的 BeanDefinition
 		return count;
 	}
 

@@ -36,7 +36,7 @@ import org.springframework.lang.Nullable;
  * @see ConfigurableListableBeanFactory#getBeanDefinition
  * @see org.springframework.beans.factory.support.RootBeanDefinition
  * @see org.springframework.beans.factory.support.ChildBeanDefinition
- *
+ *BeanDefinition 中保存了我们的 Bean 信息，比如这个 Bean 指向的是哪个类、是否是单例的、是否懒加载、这个 Bean 依赖了哪些 Bean 等等。
  * BeanDefinition的加载、解析、处理、注册主要涉及到了四个类。
  * ①、XMLBeanDefinitionReader：主要是的任务是把XML文件加载到内存中以Document对象的形式存在。
  * ②、DefaultBeanDefinitionDocumentReader：完成解析和处理的任务。最后将处理得到的BeanDefinitionHolder交给了BeanDefinitionReaderUtils进行注册。
@@ -52,7 +52,9 @@ public interface BeanDefinition extends AttributeAccessor, BeanMetadataElement {
 	 * @see #setScope
 	 */
 	String SCOPE_SINGLETON = ConfigurableBeanFactory.SCOPE_SINGLETON;
-
+	// 我们可以看到，默认只提供 sington 和 prototype 两种，
+	// 很多读者可能知道还有 request, session, globalSession, application, websocket 这几种，
+	// 不过，它们属于基于 web 的扩展。
 	/**
 	 * Scope identifier for the standard prototype scope: "prototype".
 	 * <p>Note that extended bean factories might support further scopes.
@@ -92,6 +94,8 @@ public interface BeanDefinition extends AttributeAccessor, BeanMetadataElement {
 	/**
 	 * Set the name of the parent definition of this bean definition, if any.
 	 */
+	// 设置父 Bean，这里涉及到 bean 继承，不是 java 继承。请参见附录的详细介绍
+	// 一句话就是：继承父 Bean 的配置信息而已
 	void setParentName(@Nullable String parentName);
 
 	/**
@@ -107,6 +111,7 @@ public interface BeanDefinition extends AttributeAccessor, BeanMetadataElement {
 	 * @see #setParentName
 	 * @see #setFactoryBeanName
 	 * @see #setFactoryMethodName
+	 *  // 设置 Bean 的类名称，将来是要通过反射来生成实例的
 	 */
 	void setBeanClassName(@Nullable String beanClassName);
 

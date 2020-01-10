@@ -911,6 +911,8 @@ public class DispatcherServlet extends FrameworkServlet {
 
 		// Keep a snapshot of the request attributes in case of an include,
 		// to be able to restore the original attributes after the include.
+		//在包含request的情况下保留请求属性的快照,
+		//能够在include之后恢复原始属性.
 		Map<String, Object> attributesSnapshot = null;
 		if (WebUtils.isIncludeRequest(request)) {
 			attributesSnapshot = new HashMap<>();
@@ -922,7 +924,7 @@ public class DispatcherServlet extends FrameworkServlet {
 				}
 			}
 		}
-
+		// 使得request对象能供 handler处理和view处理 使用
 		// Make framework objects available to handlers and view objects.
 		request.setAttribute(WEB_APPLICATION_CONTEXT_ATTRIBUTE, getWebApplicationContext());
 		request.setAttribute(LOCALE_RESOLVER_ATTRIBUTE, this.localeResolver);
@@ -943,6 +945,7 @@ public class DispatcherServlet extends FrameworkServlet {
 		}
 		finally {
 			if (!WebAsyncUtils.getAsyncManager(request).isConcurrentHandlingStarted()) {
+				// 如果不为空，则还原原始属性快照。
 				// Restore the original attribute snapshot, in case of an include.
 				if (attributesSnapshot != null) {
 					restoreAttributesAfterInclude(request, attributesSnapshot);
@@ -1020,6 +1023,7 @@ public class DispatcherServlet extends FrameworkServlet {
 				//第2步:getHandler(processedRequest)方法实际上就是从HandlerMapping中找到url和controller的对应关系.这也就是第一个步骤:建立Map<url,Controller>的意义
 				mappedHandler = getHandler(processedRequest);
 				if (mappedHandler == null) {
+					// 返回404
 					noHandlerFound(processedRequest, response);
 					return;
 				}
@@ -1041,7 +1045,7 @@ public class DispatcherServlet extends FrameworkServlet {
 				 其实我们的SpringMVC关键的概念就在于Handler（处理器） 和Adapter(适配器)
 				 通过一个关键的HandlerMappings 找到合适处理你的Controller的Handler
 				 然后再通过HandlerAdapters找到一个合适的HandlerAdapter 来执行Handler即Controller里面的逻辑。 最后再返回ModlAndView...
-				 */
+				 **/
 
 				HandlerAdapter ha = getHandlerAdapter(mappedHandler.getHandler());
 
@@ -1137,7 +1141,7 @@ public class DispatcherServlet extends FrameworkServlet {
 			@Nullable Exception exception) throws Exception {
 
 		boolean errorView = false;
-
+		//如果发生异常如果是视图异常则自己处理
 		if (exception != null) {
 			if (exception instanceof ModelAndViewDefiningException) {
 				logger.debug("ModelAndViewDefiningException encountered", exception);

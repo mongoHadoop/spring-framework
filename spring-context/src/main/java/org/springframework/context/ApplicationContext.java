@@ -69,7 +69,7 @@ import org.springframework.lang.Nullable;
  * 能够捕获各种事件
  *
  */
-public interface ApplicationContext extends EnvironmentCapable, ListableBeanFactory, HierarchicalBeanFactory,
+public interface  ApplicationContext extends EnvironmentCapable, ListableBeanFactory, HierarchicalBeanFactory,
 		MessageSource, ApplicationEventPublisher, ResourcePatternResolver {
 
 	/**
