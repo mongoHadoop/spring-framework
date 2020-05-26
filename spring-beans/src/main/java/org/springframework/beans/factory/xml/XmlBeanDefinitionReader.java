@@ -147,6 +147,12 @@ public class XmlBeanDefinitionReader extends AbstractBeanDefinitionReader {
 	 * Create new XmlBeanDefinitionReader for the given bean factory.
 	 * @param registry the BeanFactory to load bean definitions into,
 	 * in the form of a BeanDefinitionRegistry
+	 *
+	 * Spring 为了解决资源定位的问题，提供了两个接口：Resource、ResourceLoader，其中：
+	 * Resource 接口是 Spring 统一资源的抽象接口
+	 * ResourceLoader 则是 Spring 资源加载的统一抽象。
+	 * 关于Resource、ResourceLoader 的更多知识请关注 《【死磕 Spring】—— IoC 之 Spring 统一资源加载策略》
+	 * Resource 资源的定位需要 Resource 和 ResourceLoader 两个接口互相配合，在上面那段代码中 new ClassPathResource("bean.xml") 为我们定义了资源，那么 ResourceLoader 则是在什么时候初始化的呢？看 XmlBeanDefinitionReader 构造方法：
 	 */
 	public XmlBeanDefinitionReader(BeanDefinitionRegistry registry) {
 		super(registry);
@@ -532,13 +538,25 @@ public class XmlBeanDefinitionReader extends AbstractBeanDefinitionReader {
 	 *
 	 * registerBeanDefinitions方法注册指定的Document对象中的bean definition。这里实际上是创建了一个BeanDefinitionDocumentReader对象然后让它来完成。
 	 * // 返回值：返回从当前配置文件加载了多少数量的 Bean
+	 * 将定义的 Bean 资源文件，载入并转换为 Document 对象了。那么，下一步就是如何将其解析为
+	 * SpringIoC 管理的 BeanDefinition 对象，并将其注册到容器中。
+	 * 这个过程由方法 #registerBeanDefinitions(Document doc, Resource resource) 方法来实现。代码如下
+	 *
 	 */
 	public int registerBeanDefinitions(Document doc, Resource resource) throws BeanDefinitionStoreException {
 		//使用DefaultBeanDefinitionDocumentReader
+		// 创建 BeanDefinitionDocumentReader 对象
 		BeanDefinitionDocumentReader documentReader = createBeanDefinitionDocumentReader();
+		// 获取已注册的 BeanDefinition 数量
 		int countBefore = getRegistry().getBeanDefinitionCount();
 		//加载及注册bean
+		// 创建 XmlReaderContext 对象
+		// 注册 BeanDefinition
+		//然后，调用该 BeanDefinitionDocumentReader 的 #registerBeanDefinitions(Document doc, XmlReaderContext readerContext) 方法，
+		// 开启解析过程，这里使用的是委派模式，具体的实现由子类 DefaultBeanDefinitionDocumentReader 完成。代码如下：
+		//从 Document 对象中获取根元素 root，然后调用 #doRegisterBeanDefinitions(Element root)` 方法，开启真正的解析过程。代码如下：
 		documentReader.registerBeanDefinitions(doc, createReaderContext(resource));
+		// 计算新注册的 BeanDefinition 数量
 		return getRegistry().getBeanDefinitionCount() - countBefore;
 	}
 

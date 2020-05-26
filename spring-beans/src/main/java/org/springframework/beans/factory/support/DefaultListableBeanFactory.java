@@ -127,6 +127,38 @@ import org.springframework.util.StringUtils;
  *
  * 之前我们说过 ApplicationContext 接口能获取到 AutowireCapableBeanFactory，
  * 就是最右上角那个，然后它向下转型就能得到 DefaultListableBeanFactory 了。
+ *
+ *
+ * ClassPathResource resource = new ClassPathResource("bean.xml");
+ * DefaultListableBeanFactory factory = new DefaultListableBeanFactory();
+ * XmlBeanDefinitionReader reader = new XmlBeanDefinitionReader(factory);
+ * reader.loadBeanDefinitions(resource);
+ *
+ *
+ * ，现在应该就一目了然了：
+ * ClassPathResource resource = new ClassPathResource("bean.xml"); ：
+ * 根据 Xml 配置文件创建 Resource 资源对象。ClassPathResource 是 Resource 接口的子类，bean.xml 文件中的内容是我们定义的 Bean 信息。
+ * DefaultListableBeanFactory factory = new DefaultListableBeanFactory();
+ * ：创建一个 BeanFactory 。DefaultListableBeanFactory 是 BeanFactory 的一个子类，BeanFactory 作为一个接口，其实它本身是不具有独立使用的功能的，
+ * 而 DefaultListableBeanFactory 则是真正可以独立使用的 IoC 容器，它是整个 Spring IoC 的始祖，在后续会有专门的文章来分析它。
+ * XmlBeanDefinitionReader reader = new XmlBeanDefinitionReader(factory);
+ * ：创建 XmlBeanDefinitionReader 读取器，用于载入 BeanDefinition 。
+ * reader.loadBeanDefinitions(resource);：开始 BeanDefinition 的载入和注册进程，完成后的 BeanDefinition 放置在 IoC 容器中。
+ *
+ *
+ * Spring 在实现上述功能中，将整个流程分为两个阶段：容器初始化阶段和加载bean 阶段。分别如下：
+ *
+ * 容器初始化阶段：
+ * 首先，通过某种方式加载 Configuration Metadata (主要是依据 Resource、ResourceLoader 两个体系) 。
+ * 然后，容器会对加载的 Configuration MetaData 进行解析和分析，并将分析的信息组装成 BeanDefinition 。
+ * 最后，将 BeanDefinition 保存注册到相应的 BeanDefinitionRegistry 中。
+ * 至此，Spring IoC 的初始化工作完成。
+ * 加载 Bean 阶段：
+ * 经过容器初始化阶段后，应用程序中定义的 bean 信息已经全部加载到系统中了，当我们显示或者隐式地调用 BeanFactory#getBean(...) 方法时，则会触发加载 Bean 阶段。
+ * 在这阶段，容器会首先检查所请求的对象是否已经初始化完成了，如果没有，则会根据注册的 Bean 信息实例化请求的对象，并为其注册依赖，然后将其返回给请求方。
+ *
+ * 所以从这篇开始分析第二个阶段：加载 Bean 阶段。
+ *
  */
 @SuppressWarnings("serial")
 public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFactory
@@ -900,6 +932,14 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 	 * @param beanName the name of the bean instance to register
 	 * @param beanDefinition definition of the bean instance to register
 	 * @throws BeanDefinitionStoreException
+	 *
+	 * 这段代码最核心的部分是这句 this.beanDefinitionMap.put(beanName, beanDefinition) 代码段。
+	 * 所以，注册过程也不是那么的高大上，就是利用一个 Map 的集合对象来存放：
+	 * key 是 beanName ，value 是 BeanDefinition 对象。
+	 *
+	 * 😈 其实整段代码的核心就在于 this.beanDefinitionMap.put(beanName, beanDefinition); 代码块。而 BeanDefinition 的缓存也不是神奇的东西，就是定义一个 Map ：
+	 * key 为 beanName 。
+	 * value 为 BeanDefinition 对象。
 	 */
 	@Override
 	public void registerBeanDefinition(String beanName, BeanDefinition beanDefinition)
@@ -921,8 +961,11 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 		 *  BeanDefinition existingDefinition = this.beanDefinitionMap.get(beanName);
 		 */
 		// old? 还记得 “允许 bean 覆盖” 这个配置吗？allowBeanDefinitionOverriding
+		// 从缓存中获取指定 beanName 的 BeanDefinition
 		BeanDefinition existingDefinition = this.beanDefinitionMap.get(beanName);
+		// 如果存在
 		if (existingDefinition != null) {
+			// 如果存在但是不允许覆盖，抛出异常
 			if (!isAllowBeanDefinitionOverriding()) {
 				throw new BeanDefinitionOverrideException(beanName, beanDefinition, existingDefinition);
 			}
@@ -948,15 +991,16 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 							"] with [" + beanDefinition + "]");
 				}
 			}
+			// 【重点】允许覆盖，直接覆盖原有的 BeanDefinition 到 beanDefinitionMap 中。
 			this.beanDefinitionMap.put(beanName, beanDefinition);
 		}
-		else {
+		else {  // 如果未存在
 			if (hasBeanCreationStarted()) {
 				// Cannot modify startup-time collection elements anymore (for stable iteration)
 				synchronized (this.beanDefinitionMap) {
 					/**
 					 * this.beanDefinitionMap.put(beanName, beanDefinition);
-					 */
+					 */  // 【重点】添加到 BeanDefinition 到 beanDefinitionMap 中。
 					this.beanDefinitionMap.put(beanName, beanDefinition);
 					List<String> updatedDefinitions = new ArrayList<>(this.beanDefinitionNames.size() + 1);
 					updatedDefinitions.addAll(this.beanDefinitionNames);
@@ -977,7 +1021,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 			}
 			this.frozenBeanDefinitionNames = null;
 		}
-
+		// 重新设置 beanName 对应的缓存
 		if (existingDefinition != null || containsSingleton(beanName)) {
 			resetBeanDefinition(beanName);
 		}

@@ -24,6 +24,9 @@ import org.springframework.lang.Nullable;
  *
  * @author Rob Harrop
  * @since 2.0
+ * BeanDefinition 继承 AttributeAccessor 和 BeanMetadataElement 接口。两个接口定义如下：
+ *
+ * org.springframework.cor.AttributeAccessor 接口，定义了与其它对象的（元数据）进行连接和访问的约定，即对属性的修改，包括获取、设置、删除。代码如下：
  */
 public interface AttributeAccessor {
 

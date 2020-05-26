@@ -534,6 +534,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 			// 注册也只是将这些信息都保存到了注册中心(说到底核心是一个 beanName-> beanDefinition 的 map)
 			//即通过BeanFactory 解析xml,注解等配置上下文,将java bean注册到 beanDefinition 中
 			ConfigurableListableBeanFactory beanFactory = obtainFreshBeanFactory();
+
 			//这里是在子类中启动refreshBeanFactort()的地方
 			// Prepare the bean factory for use in this context.
 			//  3： 对IoC容器进行一些预处理（设置一些公共属性）
@@ -550,23 +551,29 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 				//  4:  允许在上下文子类中对bean工厂进行后处理。
 				// 这里是提供给子类的扩展点，到这里的时候，所有的 Bean 都加载、注册完成了，但是都还没有初始化
 				// 具体的子类可以在这步的时候添加一些特殊的 BeanFactoryPostProcessor 的实现类或做点什么事
-				//即实现　了ApplicationContextAware　BeanPostProcessor 等接口的调用处理方法
+				// 注册 BeanPostProcessor 的实现类，注意看和 BeanFactoryPostProcessor 的区别　
+				//即实现　了ApplicationContextAware　
+				/**
+				 * 可以看出设计策略是“先顾大局”-类似的操作BeanFactory一般出现在Bean之前，操作完Bean之后，BeanFactory会进行“管理”；Bean操作的前提是应用了BeanPostProcessor。
+				 */
 				postProcessBeanFactory(beanFactory);
 
 				//调用beanFactory的后处理器，这些后处理器是在bean定义中向容器注册的
 				// Invoke factory processors registered as beans in the context.
 				//  5： 调用BeanFactoryPostProcessor后置处理器对BeanDefinition处理
 				// 调用 BeanFactoryPostProcessor 各个实现类的 postProcessBeanFactory(factory) 方法
+				//Spring容器初始化bean大致过程      定义bean标签>将bean标签解析成BeanDefinition>调用构造方法实例化(IOC)>属性值得依赖注入(DI)
+				//
+				//所以BeanFactoryPostProcess方法的执行是发生在第二部之后，第三步之前。
 				invokeBeanFactoryPostProcessors(beanFactory);
 
-				//注册bean的后处理器，在bean创建过程中调用　BeanPostProcessor
+				//注册bean的后处理器，在bean创建过程中调用　BeanPostProcessor;
 				// Register bean processors that intercept bean creation.
 				//  6： 注册BeanPostProcessor后置处理器
-				// 注册 BeanPostProcessor 的实现类，注意看和 BeanFactoryPostProcessor 的区别　
-				// 此接口两个方法: postProcessBeforeInitialization 和 postProcessAfterInitialization
-				// 两个方法分别在 Bean 初始化之前和初始化之后得到执行。注意，到这里 Bean 还没初始化　
+				// 注册 BeanPostProcessor 的实现类，注意看和 BeanFactoryPostProcessor 的区别;区别是,一个是工厂类的后置处理扩展,一个bean类的初始化扩展
+				// BeanPostProcessor 等接口的调用处理方法
+				// 此接口两个方法: postProcessBeforeInitialization 和 postProcessAfterInitializati,两个方法分别在 Bean 初始化之前和初始化之后得到执行。注意，到这里 Bean 还没初始化　
 				registerBeanPostProcessors(beanFactory);
-
 				//对上下文中的消息源进行初始化
 				// Initialize message source for this context.
 				//  7： 初始化一些消息源（比如处理国际化的i18n等消息源）
@@ -672,7 +679,6 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	/**
 	 * <p>Replace any stub property sources with actual instances.
 	 * @see org.springframework.core.env.PropertySource.StubPropertySource
-	 * @see org.springframework.web.context.support.WebApplicationContextUtils#initServletPropertySources
 	 */
 	protected void initPropertySources() {
 		// For subclasses: do nothing by default.
@@ -684,7 +690,12 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	 * @see #refreshBeanFactory()
 	 * @see #getBeanFactory()
 	 */
-	// 告诉内部子类刷新内部的bean factory
+	/**
+	 * 告诉内部子类刷新内部的bean factory
+	 * 这个方法是全文最重要的部分之一，这里将会初始化 BeanFactory、加载 Bean、注册 Bean 等等。
+	 * 当然，这步结束后，Bean 并没有完成初始化。这里指的是 Bean 实例并未在这一步生成。
+	 * @return
+	 */
 	protected ConfigurableListableBeanFactory obtainFreshBeanFactory() {
 		// 主要是通过该方法完成IoC容器的刷新
 		// ClassPathXmlApplicationContext.refreshBeanFactory 调用的是 AbstractRefreshApplicationContext
@@ -940,6 +951,34 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 		// 首先，初始化名字为 conversionService 的 Bean。本着送佛送到西的精神，我在附录中简单介绍了一下 ConversionService，因为这实在太实用了
 		// 什么，看代码这里没有初始化 Bean 啊！
 		// 注意了，初始化的动作包装在 beanFactory.getBean(...) 中，这里先不说细节，先往下看吧
+		/**
+		 * 既然文中说到了这个，顺便提一下好了。
+		 *
+		 * 最有用的场景就是，它用来将前端传过来的参数和后端的 controller 方法上的参数进行绑定的时候用。
+		 *
+		 * 像前端传过来的字符串、
+		 * 整数要转换为后端的 String、Integer 很容易，但是如果 controller 方法需要的是一个枚举值，
+		 * 或者是 Date 这些非基础类型（含基础类型包装类）值的时候，我们就可以考虑采用 ConversionService 来进行转换。
+		 *
+		 * ConversionService 接口很简单，所以要自定义一个 convert 的话也很简单。
+		 *
+		 * 下面再说一个实现这种转换很简单的方式，那就是实现 Converter 接口。
+		 *
+		 * 来看一个很简单的例子，这样比什么都管用。
+		 *  public class StringToDateConverter implements Converter<String, Date> {
+		 *
+		 *     @Override
+		 *     public Date convert(String source) {
+		 *         try {
+		 *             return DateUtils.parseDate(source, "yyyy-MM-dd", "yyyy-MM-dd HH:mm:ss", "yyyy-MM-dd HH:mm", "HH:mm:ss", "HH:mm");
+		 *         } catch (ParseException e) {
+		 *             return null;
+		 *         }
+		 *     }
+		 *  }
+		 *
+		 *  只要注册这个 Bean 就可以了。这样，前端往后端传的时间描述字符串就很容易绑定成 Date 类型了，不需要其他任何操作。
+		 */
 		if (beanFactory.containsBean(CONVERSION_SERVICE_BEAN_NAME) &&
 				beanFactory.isTypeMatch(CONVERSION_SERVICE_BEAN_NAME, ConversionService.class)) {
 			beanFactory.setConversionService(

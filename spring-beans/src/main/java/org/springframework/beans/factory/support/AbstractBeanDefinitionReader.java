@@ -90,6 +90,10 @@ public abstract class AbstractBeanDefinitionReader implements BeanDefinitionRead
 		if (this.registry instanceof ResourceLoader) {
 			this.resourceLoader = (ResourceLoader) this.registry;
 		}
+		/**
+		 * 核心在于设置 resourceLoader 这段，如果设置了 ResourceLoader 则用设置的，
+		 * 否则使用 PathMatchingResourcePatternResolver ，该类是一个集大成者的 ResourceLoader。
+		 */
 		else {
 			this.resourceLoader = new PathMatchingResourcePatternResolver();
 		}

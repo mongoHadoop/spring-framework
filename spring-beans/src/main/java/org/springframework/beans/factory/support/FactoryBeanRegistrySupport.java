@@ -111,8 +111,19 @@ public abstract class FactoryBeanRegistrySupport extends DefaultSingletonBeanReg
 								// Temporarily return non-post-processed object, not storing it yet..
 								return object;
 							}
+							//调用 #beforeSingletonCreation(String beanName) 方法，进行创建之前的处理。默认实现将该 Bean 标志为当前创建的。
 							beforeSingletonCreation(beanName);
 							try {
+								//调用 #postProcessObjectFromFactoryBean(Object object, String beanName) 方法
+								// ，对从 FactoryBean 获取的 Bean 实例对象进行后置处理。详细解析，
+								/**
+								 * 当然，子类可以重写，例如应用后处理器
+								 * 。org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory
+								 * 抽象类，对其提供了实现，代码如下：
+								 *
+								 * 该方法的定义为：对所有的 {@code postProcessAfterInitialization} 进行回调注册 BeanPostProcessors
+								 * ，让他们能够后期处理从 FactoryBean 中获取的对象。下面是具体实现：
+								 */
 								object = postProcessObjectFromFactoryBean(object, beanName);
 							}
 							catch (Throwable ex) {
@@ -120,6 +131,7 @@ public abstract class FactoryBeanRegistrySupport extends DefaultSingletonBeanReg
 										"Post-processing of FactoryBean's singleton object failed", ex);
 							}
 							finally {
+								//调用 #afterSingletonCreation(String beanName) 方法，进行创建 Bean 之后的处理，默认实现是将该 bean 标记为不再在创建中。
 								afterSingletonCreation(beanName);
 							}
 						}

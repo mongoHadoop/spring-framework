@@ -1021,6 +1021,19 @@ public class DispatcherServlet extends FrameworkServlet {
 				// Determine handler for the current request.
 				// 如果handler为空,则返回404
 				//第2步:getHandler(processedRequest)方法实际上就是从HandlerMapping中找到url和controller的对应关系.这也就是第一个步骤:建立Map<url,Controller>的意义
+				/**
+				 *     // 2.取得处理当前请求的controller,这里也称为hanlder,处理器,第一个步骤的意义就在这里体现了.
+				 *     这里并不是直接返回controller,而是返回的HandlerExecutionChain请求处理器链对象,该对象封装了handler和interceptors.
+				 *
+				 *     HandlerExecutionChain  mappedHandler
+				 *
+				 *
+				 *     第2步:getHandler(processedRequest)方法实际上就是从HandlerMapping中找到url和controller的对应关系.
+				 *     这也就是第一个步骤:建立Map<url,Controller>的意义.
+				 *     我们知道,最终处理request的是controller中的方法,
+				 *     我们现在只是知道了controller,还要进一步确认controller中处理request的方法.
+				 *     由于下面的步骤和第三个步骤关系更加紧密,直接转到第三个步骤.
+				 */
 				mappedHandler = getHandler(processedRequest);
 				if (mappedHandler == null) {
 					// 返回404
@@ -1032,21 +1045,17 @@ public class DispatcherServlet extends FrameworkServlet {
 				// Determine handler adapter for the current request.
 				// 3. 获取handler适配器 Adapter,获取handler适配器 Adapter
 				/**
-				 * 其实能看见他是从一个handlerAdapters属性里面遍历了我们的适配器
-				 * 这个handlerAdapters哪来的呢？ 跟我们的HandlerMappings一样
-				 * 在他的配置文件里面有写，就是我们刚刚所说的 待会儿见的那个东西~ 不多说 上图：
-				 *
-				 *
-				 至于什么是适配器，我们结合Handler来讲， 就如我们在最开始的总结时所说的，
-				 一开始只是找到了Handler 现在要执行了，
-				 但是有个问题，Handler不止一个， 自然而然对应的执行方式就不同了，
-				 这时候适配器的概念就出来了：对应不同的Handler的执行方案。
-
 				 其实我们的SpringMVC关键的概念就在于Handler（处理器） 和Adapter(适配器)
 				 通过一个关键的HandlerMappings 找到合适处理你的Controller的Handler
 				 然后再通过HandlerAdapters找到一个合适的HandlerAdapter 来执行Handler即Controller里面的逻辑。 最后再返回ModlAndView...
-				 **/
 
+				 第三步、反射调用处理请求的方法,返回结果视图
+				 第2步其实就是从第一个步骤中的Map<urls,beanName>中取得controller,
+				 然后经过拦截器的预处理方法,到最核心的部分--第5步调用controller的方法处理请求.在第2步中我们可以知道处理request的controller,
+				 第5步就是要根据url确定controller中处理请求的方法,然后通过反射获取该方法上的注解和参数,解析方法和参数上的注解,最后反射调用方法获取ModelAndView结果视图。因为上面采用注解url形式说明的,
+				 所以我们这里继续以注解处理器适配器来说明.第5步调用的就是AnnotationMethodHandlerAdapter的handle().handle()中的核心逻辑由invokeHandlerMethod(request, response, handler)实现。
+				 **/
+				//第3步
 				HandlerAdapter ha = getHandlerAdapter(mappedHandler.getHandler());
 
 				// Process last-modified header, if supported by the handler.
@@ -1060,6 +1069,10 @@ public class DispatcherServlet extends FrameworkServlet {
 					}
 				}
 				// 4.拦截器的预处理方法
+				/**
+				 * HandlerExecutionChain请求处理器链对象,该对象封装了handler和interceptors.
+				 */
+
 				if (!mappedHandler.applyPreHandle(processedRequest, response)) {
 					return;
 				}
@@ -1074,7 +1087,10 @@ public class DispatcherServlet extends FrameworkServlet {
 				 *
 				 */
 				// 5.实际的处理器处理请求,返回结果视图对象
-				// Actually invoke the handler.
+				// Actually invoke the handler.  ha 来源于第3步 ，HandlerExecutionChain mappedHandler 来源2步
+				/**
+				 * 第5步调用的就是AnnotationMethodHandlerAdapter的handle().handle()中的核心逻辑由invokeHandlerMethod(request, response, handler)实现。
+				 */
 				mv = ha.handle(processedRequest, response, mappedHandler.getHandler());
 
 				if (asyncManager.isConcurrentHandlingStarted()) {
@@ -1136,7 +1152,8 @@ public class DispatcherServlet extends FrameworkServlet {
 	 * Handle the result of handler selection and handler invocation, which is
 	 * either a ModelAndView or an Exception to be resolved to a ModelAndView.
 	 */
-	private void processDispatchResult(HttpServletRequest request, HttpServletResponse response,
+	private void processDispatchResult
+	(HttpServletRequest request, HttpServletResponse response,
 			@Nullable HandlerExecutionChain mappedHandler, @Nullable ModelAndView mv,
 			@Nullable Exception exception) throws Exception {
 
@@ -1149,6 +1166,7 @@ public class DispatcherServlet extends FrameworkServlet {
 			}
 			else {
 				Object handler = (mappedHandler != null ? mappedHandler.getHandler() : null);
+				//处理全局异常的位置
 				mv = processHandlerException(request, response, handler, exception);
 				errorView = (mv != null);
 			}

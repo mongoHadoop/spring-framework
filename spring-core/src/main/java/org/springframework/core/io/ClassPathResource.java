@@ -42,6 +42,13 @@ import org.springframework.util.StringUtils;
  * @see Class#getResourceAsStream(String)
  *
  * 配置文件的封装
+ *Resource 资源的定位需要 Resource 和 ResourceLoader 两个接口互相配合，
+ * 在上面那段代码中 new ClassPathResource("bean.xml") 为我们定义了资源，那么 ResourceLoader 则是在什么时候初始化的呢？看 XmlBeanDefinitionReader 构造方法：
+ * // XmlBeanDefinitionReader.java
+ * public XmlBeanDefinitionReader(BeanDefinitionRegistry registry) {
+ * 	super(registry);
+ * }
+ *
  *
  */
 public class ClassPathResource extends AbstractFileResolvingResource {

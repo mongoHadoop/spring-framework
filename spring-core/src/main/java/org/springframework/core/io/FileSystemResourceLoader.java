@@ -34,6 +34,10 @@ package org.springframework.core.io;
  * @since 1.1.3
  * @see DefaultResourceLoader
  * @see org.springframework.context.support.FileSystemXmlApplicationContext
+ *
+ * 从文件系统加载资源并以 FileSystemResource 类型返回，这样我们就可以得到想要的资源类型。代码如下：
+ * Resource fileResource1 =  new FileSystemResourceLoader().getResource("D:/Users/chenming673/Documents/spark.txt");
+ * Resourc
  */
 public class FileSystemResourceLoader extends DefaultResourceLoader {
 

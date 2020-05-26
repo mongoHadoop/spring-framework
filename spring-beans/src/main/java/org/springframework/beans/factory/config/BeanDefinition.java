@@ -43,6 +43,8 @@ import org.springframework.lang.Nullable;
  * ③、BeanDefinitionReaderUtils：BeanDefinitionHolder有了，Bean工厂也有了，它就负责把BeanDefinitionHolder中的BeanDefinition和BeanName等取出来，然后注册到Bean工厂中。
  *
  * ④、DefaultListableBeanFactory（bean工厂）：它有一个ConcurrentHashMap成员变量，以beanName为键，BeanDefinition为值保存注册的bean。
+ *
+ * ，是一个接口，它描述了一个 Bean 实例的定义，包括属性值、构造方法值和继承自它的类的更多信息。代码如下：
  */
 public interface BeanDefinition extends AttributeAccessor, BeanMetadataElement {
 

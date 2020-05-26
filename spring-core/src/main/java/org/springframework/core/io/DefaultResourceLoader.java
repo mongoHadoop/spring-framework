@@ -44,6 +44,37 @@ import org.springframework.util.StringUtils;
  * @since 10.03.2004
  * @see FileSystemResourceLoader
  * @see org.springframework.context.support.ClassPathXmlApplicationContext
+ *
+ * 下面示例是演示 DefaultResourceLoader 加载资源的具体策略，代码如下
+ *
+ * ResourceLoader resourceLoader = new DefaultResourceLoader();
+ *
+ * Resource fileResource1 = resourceLoader.getResource("D:/Users/chenming673/Documents/spark.txt");
+ * System.out.println("fileResource1 is FileSystemResource:" + (fileResource1 instanceof FileSystemResource));
+ *
+ * Resource fileResource2 = resourceLoader.getResource("/Users/chenming673/Documents/spark.txt");
+ * System.out.println("fileResource2 is ClassPathResource:" + (fileResource2 instanceof ClassPathResource));
+ *
+ * Resource urlResource1 = resourceLoader.getResource("file:/Users/chenming673/Documents/spark.txt");
+ * System.out.println("urlResource1 is UrlResource:" + (urlResource1 instanceof UrlResource));
+ *
+ * Resource urlResource2 = resourceLoader.getResource("http://www.baidu.com");
+ * System.out.println("urlResource1 is urlResource:" + (urlResource2 instanceof  UrlResource));
+ *
+ * 运行结果：
+ *
+ * fileResource1 is FileSystemResource:false
+ * fileResource2 is ClassPathResource:true
+ * urlResource1 is UrlResource:true
+ * urlResource1 is urlResource:true
+ *
+ * 其实对于 fileResource1 ，我们更加希望是 FileSystemResource 资源类型。但是，事与愿违，它是 ClassPathResource 类型。为什么呢？
+ * 在 DefaultResourceLoader#getResource() 方法的资源加载策略中，
+ * 我们知道 "D:/Users/chenming673/Documents/spark.txt" 地址，其实在该方法中没有相应的资源类型，
+ * 那么它就会在抛出 MalformedURLException 异常时，通过 DefaultResourceLoader#getResourceByPath(...) 方法，构造一个 ClassPathResource 类型的资源。
+ *
+ * 而 urlResource1 和 urlResource2 ，指定有协议前缀的资源路径，则通过 URL 就可以定义，所以返回的都是 UrlResource 类型。
+ *
  */
 public class DefaultResourceLoader implements ResourceLoader {
 
@@ -144,19 +175,37 @@ public class DefaultResourceLoader implements ResourceLoader {
 	public Resource getResource(String location) {
 		Assert.notNull(location, "Location must not be null");
 
+		//首先，通过 ProtocolResolver 来加载资源，成功返回 Resource 。
+		/**
+		 * org.springframework.core.io.ProtocolResolver ，
+		 * 用户自定义协议资源解决策略，作为 DefaultResourceLoader 的 SPI：
+		 * 它允许用户自定义资源加载协议，而不需要继承 ResourceLoader 的子类。
+		 *
+		 * 在介绍 Resource 时，提到如果要实现自定义 Resource，我们只需要继承 AbstractResource
+		 * 即可，但是有了
+		 * ProtocolResolver 后，我们不需要直接继承 DefaultResourceLoader，
+		 * 改为实现 ProtocolResolver 接口也可以实现自定义的 ResourceLoader。
+		 *
+		 * 在 Spring 中你会发现该接口并没有实现类，它需要用户自定义，
+		 * 自定义的 Resolver 如何加入 Spring 体系呢？
+		 * 调用 DefaultResourceLoader#addProtocolResolver(ProtocolResolver) 方法即可。代码如下：
+		 *
+		 */
 		for (ProtocolResolver protocolResolver : this.protocolResolvers) {
 			Resource resource = protocolResolver.resolve(location, this);
 			if (resource != null) {
 				return resource;
 			}
 		}
-
+			//其次，若 location 以 "/" 开头，则调用 #getResourceByPath() 方法，构造 ClassPathContextResource 类型资源并返回。代码如下：
 		if (location.startsWith("/")) {
 			return getResourceByPath(location);
 		}
+		//再次，若 location 以 "classpath:" 开头，则构造 ClassPathResource 类型资源并返回。在构造该资源时，通过 #getClassLoader() 获取当前的 ClassLoader。
 		else if (location.startsWith(CLASSPATH_URL_PREFIX)) {
 			return new ClassPathResource(location.substring(CLASSPATH_URL_PREFIX.length()), getClassLoader());
 		}
+		//然后，构造 URL ，尝试通过它进行资源定位，若没有抛出 MalformedURLException 异常，则判断是否为 FileURL , 如果是则构造 FileUrlResource 类型的资源，否则构造 UrlResource 类型的资源。
 		else {
 			try {
 				// Try to parse the location as a URL...

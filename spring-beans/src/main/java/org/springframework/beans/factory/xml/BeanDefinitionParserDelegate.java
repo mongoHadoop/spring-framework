@@ -652,6 +652,8 @@ public class BeanDefinitionParserDelegate {
 	 * @param parentName the name of the bean's parent bean
 	 * @return the newly created bean definition
 	 * @throws ClassNotFoundException if bean class resolution was attempted but failed
+	 * 在该方法内部，首先调用 #createBeanDefinition(String className, String parentName) 方法，创建 AbstractBeanDefinition 对象。代码如下：
+	 *
 	 */
 	protected AbstractBeanDefinition createBeanDefinition(@Nullable String className, @Nullable String parentName)
 			throws ClassNotFoundException {

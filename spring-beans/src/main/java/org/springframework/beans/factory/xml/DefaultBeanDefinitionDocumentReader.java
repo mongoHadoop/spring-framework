@@ -99,6 +99,7 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 	@Override
 	public void registerBeanDefinitions(Document doc, XmlReaderContext readerContext) {
 		this.readerContext = readerContext;
+		//从 Document 对象中获取根元素 root，然后调用 #doRegisterBeanDefinitions(Element root)` 方法，开启真正的解析过程。代码如下：
 		doRegisterBeanDefinitions(doc.getDocumentElement());
 	}
 
@@ -161,14 +162,21 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 				}
 			}
 		}
-		//解析钱处理,留给子类实现// 钩子
+		/**
+		 * #preProcessXml(Element root)、#postProcessXml(Element root) 为前置、后置增强处理，目前 Spring 中都是空实现。
+		 */
+		//解析钱处理,留给子类实现// 钩子  // 解析前处理
 		preProcessXml(root);
 		//解析并注册BeanDefinition
+		// 解析
 		/**
 		 * 将</beans>节点下的每一个<bean/>相对应的bean definition注册
+		 *
+		 *#parseBeanDefinitions(Element root, BeanDefinitionParserDelegate delegate) 是对根元素 root 的解析注册过程。代码如下：
 		 */
 		parseBeanDefinitions(root, this.delegate);
 		//解析后处理,留给子类实现
+		// 解析后处理
 		postProcessXml(root);
 
 		this.delegate = parent;
@@ -202,6 +210,7 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 					Element ele = (Element) node;
 					if (delegate.isDefaultNamespace(ele)) {
 						// 解析 default namespace 下面的几个元素
+						//默认标签解析 对四大标签：<import>、<alias>、<bean>、<beans> 进行解析。其中 <bean> 标签的解析为核心工作。关于各个标签的解析过程，
 						parseDefaultElement(ele, delegate);
 						//parseDefaultElement(ele, delegate) 代表解析的节点是 <import />、<alias />、<bean />、<beans /> 这几个。
 					}
@@ -214,6 +223,9 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 						 * 头部的地方也要引入相应的 namespace 和 .xsd 文件的路径，如下所示。
 						 * 同时代码中需要提供相应的 parser 来解析，
 						 * 如 MvcNamespaceHandler、TaskNamespaceHandler、ContextNamespaceHandler、AopNamespaceHandler 等。
+						 *
+						 * 自定义标签解析
+						 * 对于默认标签则由 parseCustomElement(Element ele) 方法，负责解析。代码如下：
 						 */
 						delegate.parseCustomElement(ele);
 					}
@@ -246,6 +258,11 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 			processAliasRegistration(ele);
 		}
 		else if (delegate.nodeNameEquals(ele, BEAN_ELEMENT)) {
+
+			/**	//注册 BeanDefinition
+			 * 经过上面的解析，则将 Document 对象里面的 Bean 标签解析成了一个个的 BeanDefinition ，
+			 * 下一步则是将这些 BeanDefinition 注册到 IoC 容器中。动作的触发是在解析 Bean 标签完成后，代码如下：
+			 */
 			// 处理 <bean /> 标签定义，这也算是我们的重点吧
 			processBeanDefinition(ele, delegate);
 		}
@@ -358,26 +375,44 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 	 * processBeanDefinition方法中将Element对象转化成了BeanDefinitionHolder对象。
 	 * 这个BeanDefinitionHolder对象中持有的BeanDefinition实例的引用，还有beanName,还有bean的别名。（BeanDefinitionHolder的创建）
 	 *解析 <bean /> 的入口方法:
+	 *
+	 * 解析工作分为三步：
+	 * 1、解析默认标签。
+	 * 2、解析默认标签后下得自定义标签。
+	 * 3、注册解析后的 BeanDefinition 。
+	 * 经过前面两个步骤的解析，这时的 BeanDefinition 已经可以满足后续的使用要求了，那么接下来的工作就是将这些 BeanDefinition 进行注册，也就是完成第三步。
 	 */
 	protected void processBeanDefinition(Element ele, BeanDefinitionParserDelegate delegate) {
 		// 将 <bean /> 节点中的信息提取出来，然后封装到一个 BeanDefinitionHolder 中，细节往下看
+		/**
+		 * // 进行 bean 元素解析。
+		 *     // 如果解析成功，则返回 BeanDefinitionHolder 对象。而 BeanDefinitionHolder 为 name 和 alias 的 BeanDefinition 对象
+		 *     // 如果解析失败，则返回 null 。
+		 */
 		BeanDefinitionHolder bdHolder = delegate.parseBeanDefinitionElement(ele);
 		if (bdHolder != null) {
-			// 如果有自定义属性的话，进行相应的解析，先忽略
+			// 如果有自定义属性的话，进行相应的解析，先忽略    // 进行自定义标签处理
 			bdHolder = delegate.decorateBeanDefinitionIfRequired(ele, bdHolder);
 			try {
 				// Register the final decorated instance.
 				/**
 				 * 然后将BeanDefinitionHolder对象和特定的bean工厂作为参数交给BeanDefinitionReaderUtils类来处理来进行注册。
+				 *     // 进行 BeanDefinition 的注册
+				 *             // Register the final decorated instance.
+				 *
+				 *   调用 BeanDefinitionReaderUtils.registerBeanDefinition() 方法，来注册。其实，这里面也是调用 BeanDefinitionRegistry
+				 *   的 #registerBeanDefinition(String beanName, BeanDefinition beanDefinition) 方法，来注册 BeanDefinition 。
+				 *   不过，最终的实现是在 DefaultListableBeanFactory 中实现，代码如下：
 				 */
 				// 我们把这步叫做 注册Bean 吧
+//注册 BeanDefinition ，由 BeanDefinitionReaderUtils.registerBeanDefinition() 完成。代码如下：
 				BeanDefinitionReaderUtils.registerBeanDefinition(bdHolder, getReaderContext().getRegistry());
 			}
 			catch (BeanDefinitionStoreException ex) {
 				getReaderContext().error("Failed to register bean definition with name '" +
 						bdHolder.getBeanName() + "'", ele, ex);
 			}
-			// Send registration event. // 注册完成后，发送事件，本文不展开说这个
+			// 发出响应事件，通知相关的监听器，已完成该 Bean 标签的解析。
 			getReaderContext().fireComponentRegistered(new BeanComponentDefinition(bdHolder));
 		}
 	}

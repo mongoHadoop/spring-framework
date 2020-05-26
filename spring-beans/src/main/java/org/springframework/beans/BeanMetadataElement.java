@@ -24,6 +24,7 @@ import org.springframework.lang.Nullable;
  *
  * @author Juergen Hoeller
  * @since 2.0
+ * org.springframework.beans.BeanMetadataElement 接口，Bean 元对象持有的配置元素可以通过 #getSource() 方法来获取。代码如下：
  */
 public interface BeanMetadataElement {
 

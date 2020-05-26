@@ -139,7 +139,7 @@ public abstract class AbstractRefreshableApplicationContext extends AbstractAppl
 			//这里就是在上下文中创建defaultListableBeanFactory的地方。
 			// 创建IoC容器，也就是 DefaultListableBeanFactory, 初始化AbstractBeanFactory
 			// 注册BeanNameAware,BeanClassLoaderAware,BeanFactoryAware, 设置当前BeanFactory
-			// 初始化一个 DefaultListableBeanFactory，为什么用这个，我们马上说。
+			// 初始化一个 DefaultListableBeanFactory，为什么用这个，我们马上说.
 			DefaultListableBeanFactory beanFactory = createBeanFactory();
 			// 用于 BeanFactory 的序列化，我想不部分人应该都用不到
 			beanFactory.setSerializationId(getId());

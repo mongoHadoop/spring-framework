@@ -68,6 +68,10 @@ import org.springframework.lang.Nullable;
  * 保存对象关系表
  * 能够捕获各种事件
  *
+ * ApplicationContext 继承自 BeanFactory，但是它不应该被理解为 BeanFactory 的实现类，
+ * 而是说其内部持有一个实例化的 BeanFactory（DefaultListableBeanFactory）。
+ * 以后所有的 BeanFactory 相关的操作其实是委托给这个实例来处理的。
+ *
  */
 public interface  ApplicationContext extends EnvironmentCapable, ListableBeanFactory, HierarchicalBeanFactory,
 		MessageSource, ApplicationEventPublisher, ResourcePatternResolver {
