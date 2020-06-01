@@ -61,6 +61,22 @@ import org.springframework.util.StringValueResolver;
  * @see PlaceholderConfigurerSupport
  * @see PropertyOverrideConfigurer
  * @see org.springframework.context.support.PropertySourcesPlaceholderConfigurer
+ *
+ *
+ * 介绍了 BeanFactoryPostProcessor，知道 BeanFactoryPostProcessor
+ * 作用域容器启动阶段，可以对解析好的 BeanDefinition 进行定制化处理，
+ * 而其中 PropertyPlaceholderConfigurer 是其一个非常重要的应用，也是其子类，介绍如下
+ *
+ *
+ * PropertyPlaceholderConfigurer 允许我们用 Properties 文件中的属性，来定义应用上下文（配置文件或者注解）。
+ * 什么意思，就是说我们在 XML 配置文件（或者其他方式，如注解方式）中使用占位符的方式来定义一些资源，
+ * 并将这些占位符所代表的资源配置到 Properties 中，这样只需要对 Properties 文件进行修改即可，这个特性非常，在后面来介绍一种我们在项目中经常用到场景。
+ *
+ * 从 PropertyPlaceholderConfigurer 的结构图可以看出，它间接实现了 Aware 和 BeanFactoryPostProcessor
+ * 两大扩展接口，这里只需要关注 BeanFactoryPostProcessor 即可。我们知道 BeanFactoryPostProcessor 提供了
+ * #postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory)
+ * 接口方法，在这个体系中该方法的是在 PropertyResourceConfigurer
+ * 中实现，该类为属性资源的配置类，它实现了 BeanFactoryPostProcessor 接口，代码如下：
  */
 public class PropertyPlaceholderConfigurer extends PlaceholderConfigurerSupport {
 
@@ -212,16 +228,34 @@ public class PropertyPlaceholderConfigurer extends PlaceholderConfigurerSupport 
 		}
 	}
 
-
 	/**
+	 * 在 PropertyPlaceholderConfigurer 中，重写 #processProperties(ConfigurableListableBeanFactory beanFactory, Properties props) 方法，代码如下：
 	 * Visit each bean definition in the given bean factory and attempt to replace ${...} property
-	 * placeholders with values from the given properties.
+	 * placeholders with values from the given properties.'=
 	 */
 	@Override
 	protected void processProperties(ConfigurableListableBeanFactory beanFactoryToProcess, Properties props)
 			throws BeansException {
-
+		// <1> 创建 StringValueResolver 对象
+		/**
+		 * 首先，构造一个 PlaceholderResolvingStringValueResolver 类型的 StringValueResolver 实例。
+		 * StringValueResolver 为一个解析 String 类型值的策略接口，该接口提供了 #resolveStringValue(String strVal) 方法，
+		 * 用于解析 String 值。PlaceholderResolvingStringValueResolver 为其一个解析策略
+		 *
+		 * 在构造 String 值解析器 StringValueResolver 时，将已经解析的 Properties 实例对象封装在 PlaceholderResolver 实例 resolver 中。
+		 *  PlaceholderResolver 是一个用于解析字符串中包含占位符的替换值的策略接口，该接口有一个 #resolvePlaceholder(String strVa) 方法，用于返回占位符的替换值。
+		 * 还有一个 PropertyPlaceholderHelper 工具 helper ，从名字上面看应该是进行替换的工具类
+		 */
 		StringValueResolver valueResolver = new PlaceholderResolvingStringValueResolver(props);
+
+		// <2> 处理
+		/**
+		 * 然后，得到 String 解析器的实例 valueResolver 后，则会调用 #doProcessProperties(ConfigurableListableBeanFactory
+		 * beanFactoryToProcess, StringValueResolver valueResolver) 方法，
+		 * 来进行真值的替换操作。该方法在父类 PlaceholderConfigurerSupport 中实现，代码如下：
+		 *
+		 * PlaceholderResolvingStringValueResolver，调用其 #resolveStringValue(String strVal) 方法，代码如下：
+		 */
 		doProcessProperties(beanFactoryToProcess, valueResolver);
 	}
 
@@ -241,10 +275,13 @@ public class PropertyPlaceholderConfigurer extends PlaceholderConfigurerSupport 
 		@Override
 		@Nullable
 		public String resolveStringValue(String strVal) throws BeansException {
+			// 解析真值
 			String resolved = this.helper.replacePlaceholders(strVal, this.resolver);
+			// trim
 			if (trimValues) {
 				resolved = resolved.trim();
 			}
+			// 返回真值
 			return (resolved.equals(nullValue) ? null : resolved);
 		}
 	}

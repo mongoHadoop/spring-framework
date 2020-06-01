@@ -74,6 +74,7 @@ public class BeanDefinitionVisitor {
 	 * and ConstructorArgumentValues contained in them.
 	 * @param beanDefinition the BeanDefinition object to traverse
 	 * @see #resolveStringValue(String)
+	 * 这个方法的核心在于 #visitBeanDefinition(BeanDefinition beanDefinition) 方法的调用，代码如下：
 	 */
 	public void visitBeanDefinition(BeanDefinition beanDefinition) {
 		visitParentName(beanDefinition);
@@ -82,6 +83,7 @@ public class BeanDefinitionVisitor {
 		visitFactoryMethodName(beanDefinition);
 		visitScope(beanDefinition);
 		if (beanDefinition.hasPropertyValues()) {
+			//本篇文章的主题是 property ，所以关注 #visitPropertyValues(MutablePropertyValues pvs) 方法即可。代码如下：
 			visitPropertyValues(beanDefinition.getPropertyValues());
 		}
 		if (beanDefinition.hasConstructorArgumentValues()) {
@@ -142,10 +144,16 @@ public class BeanDefinitionVisitor {
 	}
 
 	protected void visitPropertyValues(MutablePropertyValues pvs) {
+		// 遍历 PropertyValue 数组
 		PropertyValue[] pvArray = pvs.getPropertyValues();
 		for (PropertyValue pv : pvArray) {
+			// 解析真值
 			Object newVal = resolveValue(pv.getValue());
 			if (!ObjectUtils.nullSafeEquals(newVal, pv.getValue())) {
+				// 设置到 PropertyValue 中
+				/**
+				 * 过程就是对属性数组进行遍历，调用 #resolveValue(Object value)方法，对属性进行解析获取最新值，如果新值和旧值不等，则用新值替换旧值。
+				 */
 				pvs.add(pv.getName(), newVal);
 			}
 		}

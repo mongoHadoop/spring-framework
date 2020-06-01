@@ -73,15 +73,23 @@ public abstract class PropertyResourceConfigurer extends PropertiesLoaderSupport
 	 * {@linkplain #mergeProperties Merge}, {@linkplain #convertProperties convert} and
 	 * {@linkplain #processProperties process} properties against the given bean factory.
 	 * @throws BeanInitializationException if any properties cannot be loaded
+	 *
+	 * <1> 处，调用 #mergeProperties() 方法，返回合并的 Properties 实例。Properties 实例维护这一组 key-value ，其实就是 Properties 配置文件中的内容。
+	 * <2> 处，调用 #convertProperties(Properties props) 方法，转换合并的值，其实就是将原始值替换为真正的值。
+	 * <3> 处，调用 #processProperties(ConfigurableListableBeanFactory beanFactory, Properties props)
+	 *     方法，前面两个步骤已经将配置文件中的值进行了处理，那么该方法就是真正的替换过程，该方法由子类实现。代码如下：
 	 */
 	@Override
 	public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
 		try {
+			//  // <1> 返回合并的 Properties 实例
 			Properties mergedProps = mergeProperties();
-
+			// Convert the merged properties, if necessary.
+			// <2> 转换合并属性
 			// Convert the merged properties, if necessary.
 			convertProperties(mergedProps);
-
+			// Let the subclass process the properties.
+			// <3> 子类处理
 			// Let the subclass process the properties.
 			processProperties(beanFactory, mergedProps);
 		}
